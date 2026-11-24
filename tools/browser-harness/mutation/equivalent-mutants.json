@@ -1,0 +1,21 @@
+{
+  "src/signal-policy.ts redeemOrder condition: !isSignalableId(Math.abs(order.rawTarget)) -> false": "Unreachable: decideSignal, the only issuer, refuses every ID that fails isSignalableId, and orders are frozen; this repeat guards future issuers.",
+  "src/signal-policy.ts redeemOrder call: isSignalableId(Math.abs(order.rawTarget)) -> (Math.abs(order.rawTarget))": "Unreachable: decideSignal, the only issuer, refuses every ID that fails isSignalableId, and orders are frozen; this repeat guards future issuers.",
+  "src/signal-policy.ts redeemOrder statement: throw new Error(`refusing signal target ${String(order.rawTarget)}`); -> (removed)": "Unreachable: decideSignal, the only issuer, refuses every ID that fails isSignalableId, and orders are frozen; this repeat guards future issuers.",
+  "src/signal-policy.ts STOP_DEADLINE_MS number: 5_000 -> 4999": "The deadline is checked once per 50 ms poll, so 4999 ms and 5000 ms give up at the same poll.",
+  "src/signal-policy.ts decideLease condition: lease.spawnedPid === null -> false": "A null browser PID finds no process in the table either way, so the lease is cleaned in both.",
+  "src/owned-process.ts HOST_PERFORMERS property: , // Running taskkill is not observed on Linux; its arguments are tested. win32: (rawTarget, sign... -> (removed)": "The win32 performer is chosen only on Windows; Linux runs never reach it (its arguments are tested in taskkillArgs).",
+  "src/owned-process.ts HOST_PERFORMERS call: runTaskkill(taskkillArgs(rawTarget, signal)) -> (taskkillArgs(rawTarget, signal))": "The win32 performer is chosen only on Windows; Linux runs never reach it (its arguments are tested in taskkillArgs).",
+  "src/owned-process.ts hostProcessIo condition: currentPlatformName() === \"win32\" -> false": "On Linux the platform is never win32, so the posix performer is chosen either way.",
+  "src/owned-process.ts spawnOwned property: , windowsHide: true -> (removed)": "windowsHide only hides a console window on Windows.",
+  "src/owned-process.ts spawnOwned boolean: true -> false": "windowsHide only hides a console window on Windows.",
+  "src/owned-process.ts spawnOwned condition: startTime === undefined -> false": "Reachable only when the child exits before its start time is read, a race no test can force.",
+  "src/namespace-isolation.ts descendsFromInit condition: current.parentPid === null -> false": "A null parent PID finds no process in the table either way, so the walk ends in both.",
+  "src/namespace-isolation.ts namespaceUnavailableReason element: \"--user\", -> (removed)": "The probe only tells a refused user namespace from an allowed one; `unshare --user`, `unshare --map-current-user` and a default shell all succeed or fail together with the full probe.",
+  "src/namespace-isolation.ts namespaceUnavailableReason element: \"--map-current-user\", -> (removed)": "The probe only tells a refused user namespace from an allowed one; `unshare --user`, `unshare --map-current-user` and a default shell all succeed or fail together with the full probe.",
+  "src/namespace-isolation.ts namespaceUnavailableReason element: , \"true\" -> (removed)": "The probe only tells a refused user namespace from an allowed one; `unshare --user`, `unshare --map-current-user` and a default shell all succeed or fail together with the full probe.",
+  "src/namespace-isolation.ts spawnIsolated condition: sentinel === undefined -> false": "This process can always read its own /proc entry, so the sentinel is never undefined.",
+  "src/namespace-isolation.ts spawnIsolated property: cwd: options.cwd, -> (removed)": "Every caller runs with the same working directory it passes, so inheriting it changes nothing.",
+  "src/namespace-isolation.ts runNamespacedSuites property: cwd: packageDir, -> (removed)": "Every caller runs with the same working directory it passes, so inheriting it changes nothing.",
+  "src/browser.ts spawnLeasedBrowser condition: spawned.ownership !== null -> true": "Ownership is null only when the child exits before its start time is read, a race no test can force."
+}

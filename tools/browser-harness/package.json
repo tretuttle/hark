@@ -1,0 +1,21 @@
+{
+  "name": "@hark/browser-harness",
+  "private": true,
+  "bin": {
+    "browser-harness": "./src/cli.ts"
+  },
+  "type": "module",
+  "scripts": {
+    "test": "vp test run --config ../../vite.config.ts --dir .",
+    "typecheck": "effect-tsgo tsrs --noEmit",
+    "browser-harness": "node src/cli.ts",
+    "mutation:guard": "node mutation/guard-mutation.ts"
+  },
+  "devDependencies": {
+    "@hark/recording": "workspace:*",
+    "@types/node": "catalog:",
+    "har-to-k6": "0.13.0",
+    "har-validator": "5.1.5",
+    "vite-plus": "catalog:"
+  }
+}
