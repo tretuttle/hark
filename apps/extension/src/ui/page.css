@@ -1,0 +1,66 @@
+/* The extension pages' frame and the parts both pages use. Tokens and controls come from styles.css and controls.css. */
+body {
+  min-height: 100vh;
+}
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  color: var(--text);
+}
+.page-hd {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--line);
+}
+/* The header gap is 12px for the controls after the title. The mark sits 9px from the title's box, 10px from the ink
+   of its first capital. */
+.page-hd .hark-mark {
+  margin-inline-end: -3px;
+}
+.page-hd h1 {
+  font-size: 16px;
+  font-weight: 700;
+}
+.page-body {
+  padding: 24px;
+}
+a.btn {
+  text-decoration: none;
+}
+.btn-danger {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.btn-danger:hover {
+  background: var(--bg);
+}
+.btn:disabled {
+  cursor: default;
+}
+.btn-secondary:disabled {
+  border-color: var(--line);
+  background: var(--bg);
+  color: var(--muted);
+}
+.eyebrow {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.callout p {
+  max-width: 70ch;
+}
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -1,0 +1,119 @@
+/* The history page: sites on the left, the chosen site's sessions on the right. */
+.hist {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: calc(100vh - 57px);
+}
+.hist-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 16px;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+}
+.hist-side .ctl {
+  background: var(--bg);
+}
+.sites > li + li {
+  margin-top: 2px;
+}
+.site-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.site-btn:hover {
+  background: var(--surface2);
+}
+.site-btn[aria-current] {
+  background: var(--sel);
+  font-weight: 650;
+}
+.site-btn .ic {
+  color: var(--muted);
+}
+.storage {
+  margin-top: auto;
+}
+.hist-main {
+  position: relative;
+  min-width: 0;
+  padding: 20px 24px 0;
+}
+.site-hd {
+  align-items: flex-start;
+}
+.site-name {
+  font-size: 18px;
+  font-weight: 700;
+}
+.daychart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: 420px;
+  height: 52px;
+}
+.daychart i {
+  display: block;
+  flex: 1;
+  border-radius: 2px;
+  background: var(--control);
+}
+.daychart i.on {
+  background: var(--accent);
+}
+.dlabels {
+  display: flex;
+  gap: 6px;
+  max-width: 420px;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.dlabels span {
+  flex: 1;
+  text-align: center;
+}
+.day {
+  margin: 8px 0 4px;
+}
+.sess {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+.sess + .sess {
+  margin-top: 2px;
+}
+.sess:has(:checked) {
+  background: var(--sel);
+}
+.sess .grow {
+  display: flex;
+  flex-direction: column;
+}
+.check:has(> input:only-child) {
+  align-items: center;
+}
+.selbar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px -24px 0;
+  padding: 12px 24px;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+}

@@ -1,0 +1,391 @@
+/* Controls shared by the popup and the extension pages: buttons, fields, checkboxes, callouts, the meter. */
+.hdr {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 8px 8px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-weight: 650;
+  font-size: 14px;
+}
+
+.ic {
+  flex: none;
+}
+
+.hark-mark {
+  flex: none;
+}
+
+.hark-mark .mark {
+  fill: var(--mark);
+}
+
+.hark-mark .dot {
+  fill: var(--dot);
+}
+
+.pad {
+  padding: 16px;
+}
+
+.stack > * + * {
+  margin-top: 12px;
+}
+
+.stack-s > * + * {
+  margin-top: 8px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.row.top {
+  align-items: flex-start;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.right {
+  margin-left: auto;
+}
+
+.wrap-any {
+  overflow-wrap: anywhere;
+}
+
+.tn {
+  font-variant-numeric: tabular-nums;
+}
+
+.meta,
+.help {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.help {
+  display: block;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.fl {
+  display: block;
+  margin-bottom: 4px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.fname {
+  color: var(--muted);
+  font:
+    500 12px/1.45 ui-monospace,
+    monospace;
+  overflow-wrap: anywhere;
+}
+
+.file {
+  font-weight: 600;
+}
+
+.divider {
+  height: 1px;
+  margin: 0;
+  border: 0;
+  background: var(--line);
+}
+
+.iconbtn {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.iconbtn:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-primary:disabled {
+  background: var(--surface2);
+  color: var(--muted);
+  cursor: default;
+}
+
+.btn-secondary {
+  border-color: var(--control);
+  background: var(--surface);
+}
+
+.btn-secondary:hover {
+  background: var(--surface2);
+}
+
+.btn-lg {
+  width: 100%;
+  height: 44px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.btns > .btn {
+  flex: 1;
+}
+
+.btn-link {
+  padding: 2px 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.src .ic,
+.callout .ic,
+.warn-line .ic {
+  margin-top: 1px;
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.check input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  accent-color: var(--accent);
+}
+
+.check-l {
+  display: block;
+  font-weight: 500;
+}
+
+.ctl {
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--control);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.ctl::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.field {
+  display: block;
+}
+
+.field > .help {
+  margin-top: 4px;
+}
+
+.seg {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--control);
+  border-radius: 6px;
+}
+
+.seg label {
+  position: relative;
+  flex: 1;
+  text-align: center;
+  cursor: pointer;
+}
+
+.seg label + label {
+  border-left: 1px solid var(--control);
+}
+
+.seg input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.seg span {
+  display: block;
+  padding: 6px 8px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.seg label:has(:checked) {
+  background: var(--sel);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.seg label:has(:checked) span {
+  font-weight: 650;
+}
+
+.seg label:has(:disabled) span {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.seg label:has(:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.card {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.callout {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.callout-ok {
+  background: var(--success-bg);
+}
+
+.callout-ok .ic {
+  color: var(--success);
+}
+
+.callout-warn {
+  background: var(--warning-bg);
+}
+
+.callout-warn .ic {
+  color: var(--warning);
+}
+
+.callout-info .ic {
+  color: var(--accent);
+}
+
+.danger-text {
+  color: var(--danger);
+}
+
+.status-ic {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.status-ic.ok {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.status-ic.warn {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.status-ic.err {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.status-ic.info {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.meter {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--surface2);
+}
+
+.meter > i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
