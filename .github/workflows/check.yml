@@ -1,0 +1,56 @@
+name: Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    # 8.6 minutes on a 2-CPU runner (Check step 8.0); 8.6 / 0.7 = 12.2, rounded up, keeps 30% spare.
+    timeout-minutes: 13
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
+        with:
+          node-version: "26"
+          cache: true
+          run-install: true
+
+      # The *.namespace.test.ts suites need an unprivileged PID and user namespace and fail under CI
+      # without one. This runner's AppArmor default refuses it (write failed /proc/self/uid_map).
+      - name: Allow unprivileged user namespaces
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: Check
+        run: vp run check
+
+      - name: Pack extension
+        run: vp run @hark/extension#pack
+
+      - name: Check XPI is minified production output
+        run: vp run @hark/extension#check:xpi
+
+      - name: Test XPI archive
+        run: unzip -t apps/extension/dist/hark-*.xpi
+
+      - name: Upload XPI
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: hark-xpi
+          path: apps/extension/dist/hark-*.xpi
+          if-no-files-found: error

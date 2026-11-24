@@ -1,0 +1,51 @@
+name: Guard mutation
+
+# Every mutant of the signal guard must fail a test or be listed, with its reason, in
+# tools/browser-harness/mutation/equivalent-mutants.json. Runs when the guard, its tests or the
+# runner change.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "tools/browser-harness/src/signal-policy.ts"
+      - "tools/browser-harness/src/owned-process.ts"
+      - "tools/browser-harness/src/namespace-isolation.ts"
+      - "tools/browser-harness/src/browser.ts"
+      - "tools/browser-harness/src/orphan-lease.ts"
+      - "tools/browser-harness/src/process-table.ts"
+      - "tools/browser-harness/src/simulated-process-io.ts"
+      - "tools/browser-harness/src/**/*.test.ts"
+      - "tools/browser-harness/mutation/**"
+      - "vite.config.ts"
+      - ".github/workflows/guard-mutation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guard-mutation-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  guard-mutation:
+    name: Guard mutation
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
+        with:
+          node-version: "26"
+          cache: true
+          run-install: true
+
+      # The runner and every test run it starts live in unprivileged PID and user namespaces.
+      # This runner's AppArmor default refuses them (write failed /proc/self/uid_map).
+      - name: Allow unprivileged user namespaces
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: Mutate the guard
+        run: vp run @hark/browser-harness#mutation:guard

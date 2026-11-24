@@ -1,0 +1,373 @@
+name: Browser
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Immutable Zen release asset pinned by tag + SHA-256 (Milestone 160.0).
+  ZEN_VERSION: "1.24.2b"
+  ZEN_BUILD_ID: "20261111122308"
+  ZEN_TAG: "1.24.2b"
+  ZEN_SHA256: "bcf7e43160ecfe5f29953ed2a984e7a8028a58f2ec0e3114d36bb904d5f5ce80"
+  ZEN_WIN_SHA256: "bd53e63028b84fd77a4c734873d485d98b59921f4a6a6617cb654b2f9f1585bc"
+  ZEN_MACOS_SHA256: "04ee33c2e906b52f90f73384aa50e80a92530ae4b3414fb26a0a982e257f172c"
+  # The history and options page checks run in their own job, so the Browser job stays inside its limit.
+  PAGE_CHECKS: "pages-history,pages-options,pages-problem-links"
+
+jobs:
+  browser:
+    name: Browser
+    runs-on: ubuntu-latest
+    # 20.0 minutes on a 2-CPU runner (checks 19.5, export-failures 11.3 of them, no launch retried);
+    # 20.0 / 0.7 = 28.6, rounded up, keeps 30% spare.
+    timeout-minutes: 29
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
+        with:
+          node-version: "26"
+          cache: true
+          run-install: true
+
+      - name: Cache Zen Browser
+        id: cache-zen
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/zen-browser
+          key: zen-linux-x64-${{ env.ZEN_VERSION }}-${{ env.ZEN_BUILD_ID }}-${{ env.ZEN_SHA256 }}
+
+      - name: Download and verify Zen Browser
+        if: steps.cache-zen.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p "${{ runner.temp }}/zen-browser"
+          URL="https://github.com/zen-browser/desktop/releases/download/${ZEN_TAG}/zen.linux-x86_64.tar.xz"
+          if ! curl -fsSL -o "${{ runner.temp }}/zen.tar.xz" "$URL"; then
+            echo "::error::Pinned Zen release asset is unavailable at $URL. Update ZEN_VERSION, ZEN_BUILD_ID, ZEN_TAG, and ZEN_SHA256 in .github/workflows/browser.yml."
+            exit 1
+          fi
+          if ! echo "${ZEN_SHA256}  ${{ runner.temp }}/zen.tar.xz" | sha256sum -c -; then
+            echo "::error::Checksum mismatch for $URL (expected ${ZEN_SHA256}). Update ZEN_VERSION, ZEN_BUILD_ID, ZEN_TAG, and ZEN_SHA256 in .github/workflows/browser.yml."
+            exit 1
+          fi
+          tar -xf "${{ runner.temp }}/zen.tar.xz" -C "${{ runner.temp }}/zen-browser"
+          printf '%s\n' "${ZEN_SHA256}" > "${{ runner.temp }}/zen-browser/.verified-sha256"
+          rm -f "${{ runner.temp }}/zen.tar.xz"
+
+      - name: Verify cached Zen Browser
+        run: |
+          grep -qx "${ZEN_SHA256}" "${{ runner.temp }}/zen-browser/.verified-sha256"
+          grep -qx "Version=${ZEN_VERSION}" "${{ runner.temp }}/zen-browser/zen/application.ini"
+          grep -qx "BuildID=${ZEN_BUILD_ID}" "${{ runner.temp }}/zen-browser/zen/application.ini"
+
+      # The *.namespace.test.ts suites need an unprivileged PID and user namespace and fail under CI
+      # without one. This runner's AppArmor default refuses it (write failed /proc/self/uid_map).
+      - name: Allow unprivileged user namespaces
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: Pack extension
+        run: vp run @hark/extension#pack
+
+      - name: Run discovered browser checks
+        env:
+          GECKO_BINARY: ${{ runner.temp }}/zen-browser/zen/zen
+        run: |
+          XPI=$(echo apps/extension/dist/hark-*.xpi)
+          node tools/browser-harness/src/cli.ts check --binary "$GECKO_BINARY" --extension "$XPI" --short --skip "$PAGE_CHECKS" --out-dir browser-results
+
+      - name: Upload browser check results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: browser-check-results
+          path: browser-results/
+          if-no-files-found: warn
+
+  browser-pages:
+    name: Browser pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
+        with:
+          node-version: "26"
+          cache: true
+          run-install: true
+
+      - name: Cache Zen Browser
+        id: cache-zen
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/zen-browser
+          key: zen-linux-x64-${{ env.ZEN_VERSION }}-${{ env.ZEN_BUILD_ID }}-${{ env.ZEN_SHA256 }}
+
+      - name: Download and verify Zen Browser
+        if: steps.cache-zen.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p "${{ runner.temp }}/zen-browser"
+          URL="https://github.com/zen-browser/desktop/releases/download/${ZEN_TAG}/zen.linux-x86_64.tar.xz"
+          if ! curl -fsSL -o "${{ runner.temp }}/zen.tar.xz" "$URL"; then
+            echo "::error::Pinned Zen release asset is unavailable at $URL. Update ZEN_VERSION, ZEN_BUILD_ID, ZEN_TAG, and ZEN_SHA256 in .github/workflows/browser.yml."
+            exit 1
+          fi
+          if ! echo "${ZEN_SHA256}  ${{ runner.temp }}/zen.tar.xz" | sha256sum -c -; then
+            echo "::error::Checksum mismatch for $URL (expected ${ZEN_SHA256}). Update ZEN_VERSION, ZEN_BUILD_ID, ZEN_TAG, and ZEN_SHA256 in .github/workflows/browser.yml."
+            exit 1
+          fi
+          tar -xf "${{ runner.temp }}/zen.tar.xz" -C "${{ runner.temp }}/zen-browser"
+          printf '%s\n' "${ZEN_SHA256}" > "${{ runner.temp }}/zen-browser/.verified-sha256"
+          rm -f "${{ runner.temp }}/zen.tar.xz"
+
+      - name: Verify cached Zen Browser
+        run: |
+          grep -qx "${ZEN_SHA256}" "${{ runner.temp }}/zen-browser/.verified-sha256"
+          grep -qx "Version=${ZEN_VERSION}" "${{ runner.temp }}/zen-browser/zen/application.ini"
+          grep -qx "BuildID=${ZEN_BUILD_ID}" "${{ runner.temp }}/zen-browser/zen/application.ini"
+
+      - name: Pack extension
+        run: vp run @hark/extension#pack
+
+      - name: Run the page checks
+        env:
+          GECKO_BINARY: ${{ runner.temp }}/zen-browser/zen/zen
+        run: |
+          XPI=$(echo apps/extension/dist/hark-*.xpi)
+          node tools/browser-harness/src/cli.ts check --binary "$GECKO_BINARY" --extension "$XPI" --check "$PAGE_CHECKS" --out-dir browser-pages-results
+
+      - name: Upload page check results and screenshots
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: browser-pages-results
+          path: browser-pages-results/
+          if-no-files-found: warn
+
+  real-signal-suites:
+    name: Real-signal suites
+    runs-on: ubuntu-latest
+    # Setup took 25 s on a 2-CPU runner and the one test is capped at 240 s: under 5 minutes at most.
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
+        with:
+          node-version: "26"
+          cache: true
+          run-install: true
+
+      - name: Cache Zen Browser
+        id: cache-zen
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/zen-browser
+          key: zen-linux-x64-${{ env.ZEN_VERSION }}-${{ env.ZEN_BUILD_ID }}-${{ env.ZEN_SHA256 }}
+
+      - name: Download and verify Zen Browser
+        if: steps.cache-zen.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p "${{ runner.temp }}/zen-browser"
+          URL="https://github.com/zen-browser/desktop/releases/download/${ZEN_TAG}/zen.linux-x86_64.tar.xz"
+          if ! curl -fsSL -o "${{ runner.temp }}/zen.tar.xz" "$URL"; then
+            echo "::error::Pinned Zen release asset is unavailable at $URL. Update ZEN_VERSION, ZEN_BUILD_ID, ZEN_TAG, and ZEN_SHA256 in .github/workflows/browser.yml."
+            exit 1
+          fi
+          if ! echo "${ZEN_SHA256}  ${{ runner.temp }}/zen.tar.xz" | sha256sum -c -; then
+            echo "::error::Checksum mismatch for $URL (expected ${ZEN_SHA256}). Update ZEN_VERSION, ZEN_BUILD_ID, ZEN_TAG, and ZEN_SHA256 in .github/workflows/browser.yml."
+            exit 1
+          fi
+          tar -xf "${{ runner.temp }}/zen.tar.xz" -C "${{ runner.temp }}/zen-browser"
+          printf '%s\n' "${ZEN_SHA256}" > "${{ runner.temp }}/zen-browser/.verified-sha256"
+          rm -f "${{ runner.temp }}/zen.tar.xz"
+
+      - name: Verify cached Zen Browser
+        run: |
+          grep -qx "${ZEN_SHA256}" "${{ runner.temp }}/zen-browser/.verified-sha256"
+          grep -qx "Version=${ZEN_VERSION}" "${{ runner.temp }}/zen-browser/zen/application.ini"
+          grep -qx "BuildID=${ZEN_BUILD_ID}" "${{ runner.temp }}/zen-browser/zen/application.ini"
+
+      # The *.namespace.test.ts suites need an unprivileged PID and user namespace and fail under CI
+      # without one. This runner's AppArmor default refuses it (write failed /proc/self/uid_map).
+      - name: Allow unprivileged user namespaces
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: Pack extension
+        run: vp run @hark/extension#pack
+
+      - name: Run real-signal suites against the pinned browser
+        working-directory: tools/browser-harness
+        env:
+          BROWSER_HARNESS_BINARY: ${{ runner.temp }}/zen-browser/zen/zen
+        run: vp test run --config ../../vite.config.ts --dir . src/namespace-suites.test.ts
+
+  browser-windows:
+    name: Browser (Windows)
+    runs-on: windows-latest
+    # export-failures has 48 rows here with two browser launches each. On a 2-CPU runner a row takes
+    # up to 30.1 s (1437.5 s for the first 43 rows, less four lost launches). A lost launch waits out
+    # the 30 s limit for Marionette before it is retried: 36 s in all on 4 CPUs, so 45 s is allowed
+    # here, and up to 4 were seen in a run. In minutes: setup 2 + rows 48 x 30.1 s = 24.1 + lost
+    # launches 4 x 45 s = 3 + upload 0.2 = 29.3; 29.3 / 0.7 = 41.9, rounded up, keeps 30% spare.
+    timeout-minutes: 42
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
+        with:
+          node-version: "26"
+          cache: true
+          run-install: true
+
+      - name: Cache Zen Browser
+        id: cache-zen-win
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/zen-browser-win
+          key: zen-win-x64-${{ env.ZEN_VERSION }}-${{ env.ZEN_BUILD_ID }}-${{ env.ZEN_WIN_SHA256 }}
+
+      - name: Download and verify Zen Browser
+        if: steps.cache-zen-win.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $dest = "${{ runner.temp }}\zen-browser-win"
+          $exe = "${{ runner.temp }}\zen.installer.exe"
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          $url = "https://github.com/zen-browser/desktop/releases/download/$($env:ZEN_TAG)/zen.installer.exe"
+          curl.exe -fsSL -o $exe $url
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "::error::Pinned Zen release asset is unavailable at $url."
+            exit 1
+          }
+          $actual = (Get-FileHash -Path $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $env:ZEN_WIN_SHA256) {
+            Write-Error "::error::Checksum mismatch for $url (expected $($env:ZEN_WIN_SHA256), got $actual)."
+            exit 1
+          }
+          7z x $exe "-o$dest" -y | Out-Null
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Set-Content -Path "$dest\.verified-sha256" -Value $env:ZEN_WIN_SHA256 -NoNewline
+          Remove-Item -Force $exe
+
+      - name: Verify cached Zen Browser
+        shell: pwsh
+        run: |
+          $dest = "${{ runner.temp }}\zen-browser-win"
+          $sha = (Get-Content -Raw "$dest\.verified-sha256").Trim()
+          if ($sha -ne $env:ZEN_WIN_SHA256) { throw "Cached sha mismatch: $sha" }
+          $ini = if (Test-Path "$dest\core\application.ini") { "$dest\core\application.ini" } else { "$dest\application.ini" }
+          $lines = Get-Content $ini
+          if (-not ($lines -contains "Version=$($env:ZEN_VERSION)")) { throw "Missing Version=$($env:ZEN_VERSION) in $ini" }
+          if (-not ($lines -contains "BuildID=$($env:ZEN_BUILD_ID)")) { throw "Missing BuildID=$($env:ZEN_BUILD_ID) in $ini" }
+
+      - name: Pack extension
+        run: vp run @hark/extension#pack
+
+      - name: Run export-failures check
+        shell: pwsh
+        run: |
+          $dest = "${{ runner.temp }}\zen-browser-win"
+          $bin = if (Test-Path "$dest\core\zen.exe") { "$dest\core\zen.exe" } else { "$dest\zen.exe" }
+          $xpi = (Get-ChildItem apps\extension\dist\hark-*.xpi | Select-Object -First 1).FullName
+          node tools/browser-harness/src/cli.ts check --binary $bin --extension $xpi --check export-failures --short --out-dir browser-results
+
+      - name: Upload browser check results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: browser-check-results-windows
+          path: browser-results/
+          if-no-files-found: warn
+
+  browser-macos:
+    name: Browser (macOS)
+    runs-on: macos-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
+        with:
+          node-version: "26"
+          cache: true
+          run-install: true
+
+      - name: Cache Zen Browser
+        id: cache-zen-macos
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/zen-browser-macos
+          key: zen-macos-universal-${{ env.ZEN_VERSION }}-${{ env.ZEN_BUILD_ID }}-${{ env.ZEN_MACOS_SHA256 }}
+
+      - name: Download and verify Zen Browser
+        if: steps.cache-zen-macos.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p "${{ runner.temp }}/zen-browser-macos"
+          URL="https://github.com/zen-browser/desktop/releases/download/${ZEN_TAG}/zen.macos-universal.dmg"
+          if ! curl -fsSL -o "${{ runner.temp }}/zen.dmg" "$URL"; then
+            echo "::error::Pinned Zen release asset is unavailable at $URL."
+            exit 1
+          fi
+          if ! echo "${ZEN_MACOS_SHA256}  ${{ runner.temp }}/zen.dmg" | shasum -a 256 -c -; then
+            echo "::error::Checksum mismatch for $URL (expected ${ZEN_MACOS_SHA256})."
+            exit 1
+          fi
+          MNT="${{ runner.temp }}/zen-dmg-mnt"
+          mkdir -p "$MNT"
+          hdiutil attach "${{ runner.temp }}/zen.dmg" -nobrowse -readonly -mountpoint "$MNT"
+          APP=$(find "$MNT" -maxdepth 2 -name "*.app" -print -quit)
+          if [ -z "$APP" ]; then
+            hdiutil detach "$MNT" || true
+            echo "::error::No .app found inside mounted DMG"
+            exit 1
+          fi
+          cp -R "$APP" "${{ runner.temp }}/zen-browser-macos/Zen.app"
+          hdiutil detach "$MNT"
+          printf '%s\n' "${ZEN_MACOS_SHA256}" > "${{ runner.temp }}/zen-browser-macos/.verified-sha256"
+          rm -f "${{ runner.temp }}/zen.dmg"
+
+      - name: Verify cached Zen Browser
+        run: |
+          grep -qx "${ZEN_MACOS_SHA256}" "${{ runner.temp }}/zen-browser-macos/.verified-sha256"
+          grep -qx "Version=${ZEN_VERSION}" "${{ runner.temp }}/zen-browser-macos/Zen.app/Contents/Resources/application.ini"
+          grep -qx "BuildID=${ZEN_BUILD_ID}" "${{ runner.temp }}/zen-browser-macos/Zen.app/Contents/Resources/application.ini"
+
+      - name: Pack extension
+        run: vp run @hark/extension#pack
+
+      - name: Run export-failures check
+        env:
+          GECKO_BINARY: ${{ runner.temp }}/zen-browser-macos/Zen.app/Contents/MacOS/zen
+        run: |
+          XPI=$(echo apps/extension/dist/hark-*.xpi)
+          node tools/browser-harness/src/cli.ts check --binary "$GECKO_BINARY" --extension "$XPI" --check export-failures --short --out-dir browser-results
+
+      - name: Upload browser check results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: browser-check-results-macos
+          path: browser-results/
+          if-no-files-found: warn
