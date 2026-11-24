@@ -1,0 +1,26 @@
+{
+  "name": "@hark/recording",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./activity": "./src/activity.ts",
+    "./exchange": "./src/exchange.ts",
+    "./ids": "./src/ids.ts",
+    "./layout": "./src/layout.ts",
+    "./log": "./src/log.ts",
+    "./reconcile": "./src/reconcile.ts",
+    "./retention": "./src/retention.ts",
+    "./routes": "./src/routes.ts",
+    "./settings": "./src/settings.ts",
+    "./site": "./src/site.ts"
+  },
+  "scripts": {
+    "test": "vp test run --config ../../vite.config.ts --dir .",
+    "typecheck": "effect-tsgo tsrs --noEmit -p tsconfig.json && effect-tsgo tsrs --noEmit -p test/tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}
