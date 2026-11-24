@@ -1,0 +1,226 @@
+{
+  "log": {
+    "version": "1.2",
+    "creator": {
+      "name": "Firefox",
+      "version": "147.0"
+    },
+    "browser": {
+      "name": "Firefox",
+      "version": "147.0"
+    },
+    "pages": [
+      {
+        "id": "page_1",
+        "title": "https://shop.example/",
+        "startedDateTime": "2026-11-15T18:00:00.000-06:00",
+        "pageTimings": {
+          "onContentLoad": -1,
+          "onLoad": -1
+        }
+      }
+    ],
+    "entries": [
+      {
+        "startedDateTime": "2026-11-15T18:00:00.010-06:00",
+        "time": 10,
+        "request": {
+          "method": "GET",
+          "url": "https://shop.example/",
+          "httpVersion": "HTTP/2",
+          "cookies": [],
+          "headers": [],
+          "queryString": [],
+          "headersSize": -1,
+          "bodySize": 0
+        },
+        "response": {
+          "status": 200,
+          "statusText": "OK",
+          "httpVersion": "HTTP/2",
+          "cookies": [],
+          "headers": [],
+          "content": {
+            "mimeType": "text/html; charset=utf-8",
+            "size": 12,
+            "text": "<p>shop</p>\n"
+          },
+          "redirectURL": "",
+          "headersSize": -1,
+          "bodySize": -1
+        },
+        "cache": {},
+        "timings": {
+          "blocked": -1,
+          "dns": -1,
+          "connect": -1,
+          "ssl": -1,
+          "send": 1,
+          "wait": 5,
+          "receive": 4
+        },
+        "pageref": "page_1",
+        "_securityState": "secure",
+        "_priority": "Highest",
+        "serverIPAddress": "203.0.113.5",
+        "connection": "443"
+      },
+      {
+        "startedDateTime": "2026-11-15T18:00:00.020-06:00",
+        "time": 10,
+        "request": {
+          "method": "GET",
+          "url": "https://shop.example/account",
+          "httpVersion": "HTTP/2",
+          "cookies": [],
+          "headers": [],
+          "queryString": [],
+          "headersSize": -1,
+          "bodySize": 0
+        },
+        "response": {
+          "status": 302,
+          "statusText": "Found",
+          "httpVersion": "HTTP/2",
+          "cookies": [],
+          "headers": [
+            {
+              "name": "Location",
+              "value": "/login?next=%2Faccount"
+            }
+          ],
+          "content": {
+            "mimeType": "text/html",
+            "size": 0
+          },
+          "redirectURL": "/login?next=%2Faccount",
+          "headersSize": -1,
+          "bodySize": -1
+        },
+        "cache": {},
+        "timings": {
+          "blocked": -1,
+          "dns": -1,
+          "connect": -1,
+          "ssl": -1,
+          "send": 1,
+          "wait": 5,
+          "receive": 4
+        },
+        "pageref": "page_1"
+      },
+      {
+        "startedDateTime": "2026-11-15T18:00:00.030-06:00",
+        "time": 10,
+        "request": {
+          "method": "GET",
+          "url": "https://shop.example/logo.png",
+          "httpVersion": "HTTP/2",
+          "cookies": [],
+          "headers": [],
+          "queryString": [],
+          "headersSize": -1,
+          "bodySize": 0
+        },
+        "response": {
+          "status": 200,
+          "statusText": "OK",
+          "httpVersion": "HTTP/2",
+          "cookies": [],
+          "headers": [],
+          "content": {
+            "mimeType": "image/png",
+            "size": 16,
+            "encoding": "base64",
+            "text": "iVBORw0KGgoA//6Af8MoAA=="
+          },
+          "redirectURL": "",
+          "headersSize": -1,
+          "bodySize": -1
+        },
+        "cache": {},
+        "timings": {
+          "blocked": -1,
+          "dns": -1,
+          "connect": -1,
+          "ssl": -1,
+          "send": 1,
+          "wait": 5,
+          "receive": 4
+        },
+        "pageref": "page_1"
+      },
+      {
+        "startedDateTime": "2026-11-15T18:00:00.040-06:00",
+        "time": 0,
+        "request": {
+          "method": "GET",
+          "url": "https://tracker.example/t.js",
+          "httpVersion": "HTTP/2",
+          "cookies": [],
+          "headers": [],
+          "queryString": [],
+          "headersSize": -1,
+          "bodySize": 0
+        },
+        "response": {
+          "status": 0,
+          "statusText": "",
+          "httpVersion": "",
+          "cookies": [],
+          "headers": [],
+          "content": {
+            "mimeType": "",
+            "size": -1
+          },
+          "redirectURL": "",
+          "headersSize": -1,
+          "bodySize": -1
+        },
+        "cache": {},
+        "timings": {},
+        "pageref": "page_1"
+      },
+      {
+        "startedDateTime": "2026-11-15T18:00:00.050-06:00",
+        "time": 10,
+        "request": {
+          "method": "GET",
+          "url": "https://shop.example/big.json",
+          "httpVersion": "HTTP/2",
+          "cookies": [],
+          "headers": [],
+          "queryString": [],
+          "headersSize": -1,
+          "bodySize": 0
+        },
+        "response": {
+          "status": 200,
+          "statusText": "OK",
+          "httpVersion": "HTTP/2",
+          "cookies": [],
+          "headers": [],
+          "content": {
+            "mimeType": "application/json",
+            "size": 50000,
+            "comment": "Keine Response-Bodies enthalten"
+          },
+          "redirectURL": "",
+          "headersSize": -1,
+          "bodySize": -1
+        },
+        "cache": {},
+        "timings": {
+          "blocked": -1,
+          "dns": -1,
+          "connect": -1,
+          "ssl": -1,
+          "send": 1,
+          "wait": 5,
+          "receive": 4
+        },
+        "pageref": "page_1"
+      }
+    ]
+  }
+}

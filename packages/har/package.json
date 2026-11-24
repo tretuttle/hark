@@ -1,0 +1,25 @@
+{
+  "name": "@hark/har",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./model": "./src/model.ts",
+    "./parse": "./src/parse.ts",
+    "./build": "./src/build.ts",
+    "./redact": "./src/redact.ts",
+    "./summarize": "./src/summarize.ts",
+    "./filename": "./src/filename.ts",
+    "./rules": "./src/rules.ts"
+  },
+  "scripts": {
+    "test": "vp test run --config ../../vite.config.ts --dir .",
+    "typecheck": "effect-tsgo tsrs --noEmit"
+  },
+  "devDependencies": {
+    "ajv": "6.12.6",
+    "har-schema": "2.0.0",
+    "har-validator": "5.1.5",
+    "vite-plus": "catalog:"
+  }
+}

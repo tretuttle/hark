@@ -1,0 +1,211 @@
+{
+  "log": {
+    "version": "1.2",
+    "creator": {
+      "name": "WebInspector",
+      "version": "537.36"
+    },
+    "pages": [
+      {
+        "startedDateTime": "2026-11-16T06:00:00.000Z",
+        "id": "page_1",
+        "title": "https://news.example/",
+        "pageTimings": {
+          "onContentLoad": 300.2,
+          "onLoad": 800.5
+        }
+      }
+    ],
+    "entries": [
+      {
+        "startedDateTime": "2026-11-16T06:00:00.100Z",
+        "time": 10,
+        "request": {
+          "method": "GET",
+          "url": "https://news.example/",
+          "httpVersion": "HTTP/2",
+          "cookies": [
+            {
+              "name": "sid",
+              "value": "abc",
+              "path": "/",
+              "domain": "news.example",
+              "expires": null,
+              "httpOnly": true,
+              "secure": true,
+              "sameSite": "Lax"
+            }
+          ],
+          "headers": [],
+          "queryString": [],
+          "headersSize": -1,
+          "bodySize": 0
+        },
+        "response": {
+          "status": 200,
+          "statusText": "OK",
+          "httpVersion": "HTTP/2",
+          "cookies": [],
+          "headers": [],
+          "content": {
+            "mimeType": "text/html",
+            "size": 10,
+            "text": "<p>news</p>",
+            "compression": 0
+          },
+          "redirectURL": "",
+          "headersSize": -1,
+          "bodySize": -1,
+          "_transferSize": 300,
+          "_error": null
+        },
+        "cache": {},
+        "timings": {
+          "blocked": 1.2,
+          "dns": -1,
+          "ssl": -1,
+          "connect": -1,
+          "send": 0.1,
+          "wait": 20,
+          "receive": 2,
+          "_blocked_queueing": 0.8
+        },
+        "pageref": "page_1",
+        "_initiator": {
+          "type": "other"
+        },
+        "_priority": "VeryHigh",
+        "_resourceType": "document",
+        "_connectionId": "17"
+      },
+      {
+        "startedDateTime": "2026-11-16T06:00:00.200Z",
+        "time": 10,
+        "request": {
+          "method": "GET",
+          "url": "https://ads.example/a.js",
+          "httpVersion": "HTTP/2",
+          "cookies": [],
+          "headers": [],
+          "queryString": [],
+          "headersSize": -1,
+          "bodySize": 0
+        },
+        "response": {
+          "status": 0,
+          "statusText": "",
+          "httpVersion": "",
+          "cookies": [],
+          "headers": [],
+          "content": {
+            "mimeType": "x-unknown",
+            "size": 0
+          },
+          "redirectURL": "",
+          "headersSize": -1,
+          "bodySize": -1,
+          "_transferSize": 0,
+          "_error": "net::ERR_BLOCKED_BY_CLIENT"
+        },
+        "cache": {},
+        "timings": {
+          "blocked": 3,
+          "dns": -1,
+          "ssl": -1,
+          "connect": -1,
+          "send": 0,
+          "wait": 0,
+          "receive": 0,
+          "_blocked_queueing": -1
+        },
+        "pageref": "page_1",
+        "_resourceType": "script"
+      },
+      {
+        "startedDateTime": "2026-11-16T06:00:00.300Z",
+        "time": 10,
+        "request": {
+          "method": "GET",
+          "url": "https://news.example/old",
+          "httpVersion": "HTTP/2",
+          "cookies": [],
+          "headers": [],
+          "queryString": [],
+          "headersSize": -1,
+          "bodySize": 0
+        },
+        "response": {
+          "status": 301,
+          "statusText": "Moved Permanently",
+          "httpVersion": "HTTP/2",
+          "cookies": [],
+          "headers": [
+            {
+              "name": "location",
+              "value": "/new"
+            }
+          ],
+          "content": {
+            "mimeType": "text/html",
+            "size": 0
+          },
+          "redirectURL": "/new",
+          "headersSize": -1,
+          "bodySize": -1
+        },
+        "cache": {},
+        "timings": {
+          "blocked": -1,
+          "dns": -1,
+          "connect": -1,
+          "ssl": -1,
+          "send": 1,
+          "wait": 5,
+          "receive": 4
+        },
+        "pageref": "page_1"
+      },
+      {
+        "startedDateTime": "2026-11-16T06:00:00.400Z",
+        "time": 10,
+        "request": {
+          "method": "GET",
+          "url": "https://news.example/font.woff2",
+          "httpVersion": "HTTP/2",
+          "cookies": [],
+          "headers": [],
+          "queryString": [],
+          "headersSize": -1,
+          "bodySize": 0
+        },
+        "response": {
+          "status": 200,
+          "statusText": "OK",
+          "httpVersion": "HTTP/2",
+          "cookies": [],
+          "headers": [],
+          "content": {
+            "mimeType": "font/woff2",
+            "size": 16,
+            "encoding": "base64",
+            "text": "iVBORw0KGgoA//6Af8MoAA=="
+          },
+          "redirectURL": "",
+          "headersSize": -1,
+          "bodySize": -1
+        },
+        "cache": {},
+        "timings": {
+          "blocked": -1,
+          "dns": -1,
+          "connect": -1,
+          "ssl": -1,
+          "send": 1,
+          "wait": 5,
+          "receive": 4
+        },
+        "pageref": "page_1"
+      }
+    ]
+  }
+}
