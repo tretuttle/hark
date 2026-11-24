@@ -1,0 +1,70 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // Exported types are part of our contracts even before they have consumers.
+  "rules": { "types": "off", "nsTypes": "off" },
+  // Dynamically loaded check modules in tools/browser-harness/checks/*.ts tag their default export.
+  "tags": ["-discovered-check"],
+  "workspaces": {
+    "apps/extension": {
+      // extension.js builds the pages src/manifest.json names and every page under src/pages/, and
+      // scripts/build-experiment.ts bundles the parent script.
+      "entry": [
+        "src/*/main.tsx",
+        "src/pages/*/main.tsx",
+        "experiment/parent.ts",
+        "scripts/*.ts",
+        "extension.config.js",
+      ],
+      // scripts/minify.test.ts bundles these from entry text, so each resolves to its browser build.
+      "ignoreDependencies": [
+        "acorn",
+        "bootstrap",
+        "ajv",
+        "dayjs",
+        "djv",
+        "effect",
+        "ejs",
+        "greenlet",
+        "handlebars",
+        "js-yaml",
+        "jsonschema",
+        "kysely",
+        "libphonenumber-js",
+        "lit-html",
+        "lru-cache",
+        "marked",
+        "pako",
+        "prismjs",
+        "sql.js",
+        "vue",
+        "yaml",
+        "zod",
+        "zustand",
+      ],
+    },
+    "packages/*": {
+      // Only package.json `exports` and the tests are entries. Knip's default entries include src/index.ts, which
+      // would let a barrel file there pass unused.
+      "entry": [],
+      // These workspace packages are private to this monorepo.
+      "includeEntryExports": true,
+    },
+    "tools/browser-harness": {
+      "entry": ["src/cli.ts", "checks/*.ts", "mutation/guard-mutation.ts"],
+      "includeEntryExports": true,
+      // Knip does not resolve these platform process tools.
+      "ignoreBinaries": [
+        "taskkill.exe",
+        "powershell.exe",
+        "icacls",
+        "getconf",
+        "coredumpctl",
+        "unshare",
+        "mkfifo",
+        "cc",
+        "prlimit",
+        "du",
+      ],
+    },
+  },
+}

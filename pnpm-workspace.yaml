@@ -1,0 +1,57 @@
+packages:
+  - apps/*
+  - oxlint-plugin-hark
+  - packages/*
+  - scripts
+  - tools/*
+
+catalog:
+  "@effect/platform-node": 4.1.2
+  "@effect/vitest": 4.1.2
+  "@types/node": 24.12.4
+  effect: 4.1.3
+  vite-plus: 1.4.0
+
+overrides:
+  "@effect/vitest>vitest": "-"
+  effect: "catalog:"
+  vite: npm:@voidzero-dev/vite-plus-core@1.4.0
+  vite-plus: "catalog:"
+
+packageExtensions:
+  # Our patch makes @effect/vitest import vite-plus/test.
+  "@effect/vitest@*":
+    dependencies:
+      vite-plus: "catalog:"
+
+patchedDependencies:
+  "@effect/vitest@4.1.2": patches/@effect__vitest@4.1.2.patch
+
+# Runs package scripts that set environment variables inline in Windows PowerShell too.
+shellEmulator: true
+
+# Unmet peers fail resolution, so a pin outside a dependency's peer range is
+# caught when the lockfile changes instead of scrolling past as a warning.
+strictPeerDependencies: true
+
+peerDependencyRules:
+  allowAny:
+    - typescript
+    - vite
+  allowedVersions:
+    vite: "*"
+
+minimumReleaseAgeExclude:
+  - "@effect/tsgo-darwin-arm64@0.67.1"
+  - "@effect/tsgo-darwin-x64@0.67.1"
+  - "@effect/tsgo-linux-arm64@0.67.1"
+  - "@effect/tsgo-linux-arm@0.67.1"
+  - "@effect/tsgo-linux-x64@0.67.1"
+  - "@effect/tsgo-win32-arm64@0.67.1"
+  - "@effect/tsgo-win32-x64@0.67.1"
+  - "@effect/tsgo@0.67.1"
+
+# Transitive dependencies of har-to-k6 whose postinstall scripts are unneeded (husky/Node 0.10 polyfill).
+allowBuilds:
+  caporal: false
+  spawn-sync: false

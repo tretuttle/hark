@@ -1,0 +1,26 @@
+{
+  "name": "@hark/monorepo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare": "vp config --no-agent",
+    "typecheck": "vp run -r --cache typecheck",
+    "lint": "vp lint --report-unused-disable-directives",
+    "knip": "knip",
+    "knip:check": "knip --no-config-hints",
+    "test": "vp run -r --concurrency-limit 1 test",
+    "fmt": "vp fmt",
+    "fmt:check": "vp fmt --check",
+    "check": "vp fmt --check && vp lint --report-unused-disable-directives && knip --no-config-hints && vp run typecheck && vp run test"
+  },
+  "devDependencies": {
+    "@effect/tsgo": "0.67.1",
+    "@types/node": "catalog:",
+    "knip": "6.34.0",
+    "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": ">=26.12.1 <27"
+  },
+  "packageManager": "pnpm@12.14.0"
+}
