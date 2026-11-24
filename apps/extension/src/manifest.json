@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json.schemastore.org/chrome-manifest.json",
+  "manifest_version": 3,
+  "name": "Hark",
+  "version": "0.1.0",
+  "description": "Save a complete HAR of any tab in one click.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "hark@tretuttle.github.io",
+      "data_collection_permissions": { "required": ["none"] }
+    }
+  },
+  "icons": {
+    "16": "/icons/16.png",
+    "32": "/icons/32.png",
+    "48": "/icons/48.png",
+    "96": "/icons/96.png",
+    "128": "/icons/128.png"
+  },
+  "action": {
+    "default_title": "Hark",
+    "default_popup": "popup/index.html",
+    "default_area": "navbar",
+    "default_icon": "icons/toolbar.svg",
+    "theme_icons": [
+      { "light": "icons/toolbar.svg", "dark": "icons/toolbar.svg", "size": 16 },
+      { "light": "icons/toolbar.svg", "dark": "icons/toolbar.svg", "size": 32 }
+    ]
+  },
+  "options_ui": {
+    "page": "options/index.html",
+    "open_in_tab": true
+  },
+  "experiment_apis": {
+    "hark": {
+      "schema": "experiment/schema.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "experiment/parent.js",
+        "events": ["startup"],
+        "paths": [["hark"]]
+      }
+    }
+  }
+}

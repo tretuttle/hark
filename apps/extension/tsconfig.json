@@ -1,0 +1,31 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ESNext", "DOM", "DOM.Iterable", "esnext.disposable"],
+    "types": ["node"]
+  },
+  "include": ["src", "scripts", "experiment"],
+  "exclude": [
+    "dist",
+    "public",
+    "experiment/parent.ts",
+    "experiment/gecko.d.ts",
+    "experiment/gecko-io.ts",
+    "experiment/files.ts",
+    "experiment/files.test.ts",
+    "experiment/maintenance.ts",
+    "experiment/maintenance.test.ts",
+    "experiment/recorder.ts",
+    "experiment/recorder.test.ts",
+    "experiment/store.ts",
+    "experiment/store.test.ts",
+    "experiment/host.ts",
+    "experiment/settings-host.ts",
+    "experiment/settings-host.test.ts",
+    "experiment/archive-source.ts",
+    "experiment/devtools.ts",
+    "experiment/file-worker.ts",
+    "experiment/held-folder.ts"
+  ]
+}

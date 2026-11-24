@@ -1,0 +1,20 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "types": ["node"]
+  },
+  "include": [
+    "files.ts",
+    "files.test.ts",
+    "gecko.d.ts",
+    "maintenance.ts",
+    "maintenance.test.ts",
+    "recorder.ts",
+    "recorder.test.ts",
+    "settings-host.ts",
+    "settings-host.test.ts",
+    "store.ts",
+    "store.test.ts"
+  ]
+}
