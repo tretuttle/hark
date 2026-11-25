@@ -633,7 +633,7 @@ export function buildMarkerDocument(): {
   (formEntry.request as Record<string, unknown>).postData = {
     mimeType: "application/x-www-form-urlencoded",
     params: [],
-    text: `field=${postTextForm}`,
+    text: `password=${postTextForm}`,
   };
   (formEntry.response as Record<string, unknown>).content = {
     size: 40,
@@ -647,7 +647,7 @@ export function buildMarkerDocument(): {
   (multipartEntry.request as Record<string, unknown>).postData = {
     mimeType: "multipart/form-data; boundary=B",
     params: [],
-    text: `--B\r\nContent-Disposition: form-data; name="note"\r\n\r\n${postTextMultipart}\r\n--B--`,
+    text: `--B\r\nContent-Disposition: form-data; name="password"\r\n\r\n${postTextMultipart}\r\n--B--`,
   };
   (multipartEntry.response as Record<string, unknown>).content = {
     size: 20,

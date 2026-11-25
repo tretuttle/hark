@@ -137,6 +137,8 @@ export interface Material {
   readonly body: BodyCandidates;
   readonly upload: BodyCandidates;
   readonly lostGroups?: { readonly [G in HeadGroup]?: MissingReason } | undefined;
+  /** True when capture-time secretStorage === "never-store" dropped one or more header values (stored as null). */
+  readonly headersNeverStored?: boolean | undefined;
 }
 
 export interface SourceListing {

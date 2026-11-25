@@ -284,3 +284,8 @@ export const writeFailureText = (failure: WriteFailure): string =>
   (WRITE_FAILURE_COPY[failure.kind].text as (f: WriteFailure) => string)(failure);
 
 export const sizeUpTo = (n: number): string => `up to ${bytes(n)}`;
+
+export const unexaminedRequestBodiesNote = (n: number, formatted: string): string =>
+  n === 1
+    ? `${formatted} request body is not JSON, form, or multipart, so it was not examined for secrets.`
+    : `${formatted} request bodies are not JSON, form, or multipart, so they were not examined for secrets.`;

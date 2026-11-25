@@ -22,6 +22,9 @@ const STANDARD_REMOVED_PLACES: ReadonlySet<HarRedactionPlace> = new Set([
   "cookie",
   "query-string-secret",
   "body-param-secret",
+  "body-json",
+  "body-form",
+  "body-multipart",
   "redaction-record",
   "wrong-type",
 ]);

@@ -13,7 +13,7 @@ import type {
   RedactionLevel,
 } from "@hark/har/model";
 import { REDACTION_LEVELS } from "@hark/har/model";
-import { redactHar, redactHarEntry } from "@hark/har/redact";
+import { finalizeRedactionReport, redactHar, redactHarEntry } from "@hark/har/redact";
 
 /** `none` writes every value as the sources gave it. The other two are @hark/har's levels, by name. */
 export type RedactionChoice = "none" | RedactionLevel;
@@ -52,6 +52,7 @@ export function documentRedaction(choice: RedactionChoice): DocumentRedaction {
   }
   const level = choice;
   const counts = new Map<HarRedactionPlace, number>();
+  const unexaminedPlaces = new Set<HarRedactionPlace>();
   const entryRecords: HarRedactionRecord[] = [];
   let entriesAffected = 0;
   return {
@@ -59,6 +60,9 @@ export function documentRedaction(choice: RedactionChoice): DocumentRedaction {
       const result = redactHarEntry(entry, { level }, index);
       for (const place of result.places) {
         if (place.count > 0) counts.set(place.place, (counts.get(place.place) ?? 0) + place.count);
+        if (level === "standard" && place.status === "kept-not-examined" && place.count > 0) {
+          unexaminedPlaces.add(place.place);
+        }
       }
       if (result.records.length > 0) entriesAffected += 1;
       entryRecords.push(...result.records);
@@ -70,19 +74,13 @@ export function documentRedaction(choice: RedactionChoice): DocumentRedaction {
       const pageRecords = report.records.filter((r) => r.field.startsWith(PAGE_FIELD_PREFIX));
       const logRecords = report.records.filter((r) => !r.field.startsWith(PAGE_FIELD_PREFIX));
       const records = [...pageRecords, ...entryRecords, ...logRecords];
-      const places = report.places.map((place) => ({
-        ...place,
-        count: place.count + (counts.get(place.place) ?? 0),
-      }));
-      const merged: HarLogRedactionExtension = {
-        ...report,
-        totalRemoved: records.reduce((sum, record) => sum + record.count, 0),
-        entriesAffected: report.entriesAffected + entriesAffected,
-        rules: [...new Set(records.map((record) => record.ruleId))],
+      const merged = finalizeRedactionReport(
+        report,
+        counts,
+        unexaminedPlaces,
         records,
-        places,
-        notExamined: places.filter((place) => place.status === "kept-not-examined"),
-      };
+        report.entriesAffected + entriesAffected,
+      );
       const { entries: _entries, ...rest } = document.log;
       return {
         log: { ...rest, _harExport: { ...rest._harExport, redaction: merged } },

@@ -12,6 +12,7 @@ import {
   SETTINGS_LINKS,
   sizeUpTo,
   sourceLine,
+  unexaminedRequestBodiesNote,
   WRITE_FAILURE_COPY,
   writeFailureText,
 } from "./copy.ts";
@@ -21,6 +22,7 @@ import {
   RANGES,
   RECORDING_PROBLEMS,
   SCOPES,
+  unexaminedRequestBodies,
   unexpectedGaps,
   type Choices,
   type Gap,
@@ -596,6 +598,7 @@ const Done = ({ view, dispatch }: ScreenProps<"done">) => {
   const report = view.saved.report;
   const list = gaps(report);
   const missing = unexpectedGaps(list);
+  const unexamined = unexaminedRequestBodies(report);
   const response = report.bodies.response;
   return (
     <div className="pad stack">
@@ -650,6 +653,12 @@ const Done = ({ view, dispatch }: ScreenProps<"done">) => {
         <dt>Secrets</dt>
         <dd>{report.redaction.choice === "none" ? "Kept" : "Removed"}</dd>
       </dl>
+      {unexamined > 0 && (
+        <p className="warn-line">
+          <Icon name="alert" />
+          <span>{unexaminedRequestBodiesNote(unexamined, count(unexamined))}</span>
+        </p>
+      )}
       {list.length === 0 ? (
         <p className="meta">{COPY.nothingMissing}</p>
       ) : (

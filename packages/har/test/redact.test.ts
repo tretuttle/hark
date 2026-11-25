@@ -7,7 +7,7 @@ import { redactHar, redactHarEntry, redactUrl } from "../src/redact.ts";
 import { DEFAULT_REDACTION_RULES } from "../src/rules.ts";
 
 describe("redactHar", () => {
-  it("removes structurally defined credential carriers under standard and leaves bodies byte-identical", () => {
+  it("removes structurally defined credential carriers and secret request body fields under standard", () => {
     const jsonBodyText = JSON.stringify({
       user: "alice",
       nested: { password: "body-json-secret-1" },
@@ -81,6 +81,8 @@ describe("redactHar", () => {
       "q-secret-1",
       "param-secret-1",
       "camel-param-secret-1",
+      "body-json-secret-1",
+      "form-secret-1",
     ]) {
       expect(serialized).not.toContain(removedSecret);
     }
@@ -94,7 +96,9 @@ describe("redactHar", () => {
       { name: "page", value: "2" },
     ]);
     expect(first.request.headers.find((h) => h.name === "Accept")?.value).toBe("application/json");
-    expect(first.request.postData?.text).toBe(jsonBodyText);
+    expect(first.request.postData?.text).toBe(
+      JSON.stringify({ user: "alice", nested: { password: "[REDACTED]" } }),
+    );
     expect(first.response.content.text).toBe('{"status":"ok"}');
 
     const second = redacted.log.entries[1]!;
@@ -103,15 +107,18 @@ describe("redactHar", () => {
       { name: "clientSecret", value: "[REDACTED]" },
       { name: "grant_type", value: "client_credentials" },
     ]);
-    expect(second.request.postData?.text).toBe(formBodyText);
+    expect(second.request.postData?.text).toBe(
+      "client_secret=%5BREDACTED%5D&grant_type=client_credentials",
+    );
 
     expect(report.applied).toBe(true);
     expect(report.level).toBe("standard");
     expect(report.entriesAffected).toBe(2);
-    expect(report.totalRemoved).toBe(13);
+    expect(report.totalRemoved).toBe(15);
     expect(report.records.some((record) => record.field === "log.pages[].title")).toBe(true);
-    expect(report.notInspected).toContain("body-json");
-    expect(report.notInspected).toContain("body-form");
+    expect(report.notInspected).not.toContain("body-json");
+    expect(report.notInspected).not.toContain("body-form");
+    expect(report.notInspected).not.toContain("body-multipart");
     expect(report.notInspected).toContain("response-body-json");
     expect(
       report.places.every(
@@ -124,10 +131,14 @@ describe("redactHar", () => {
       "request.cookies[].value",
       "request.headers[].value",
       "request.queryString[].value",
+      "request.postData.text",
       "response.cookies[].value",
       "response.headers[].value",
     ]);
-    expect(second._harExport?.redactedFields).toEqual(["request.postData.params[].value"]);
+    expect(second._harExport?.redactedFields).toEqual([
+      "request.postData.params[].value",
+      "request.postData.text",
+    ]);
     expect(parseHar(redacted).ok).toBe(true);
   });
 
@@ -254,6 +265,9 @@ describe("redactHar", () => {
       "cookie",
       "query-string-secret",
       "body-param-secret",
+      "body-json",
+      "body-form",
+      "body-multipart",
       "redaction-record",
       "wrong-type",
     ]);
@@ -445,6 +459,11 @@ describe("redactHar", () => {
       "REFERER",
       "LOCATION",
       "REDIRECT",
+      "JSONPW",
+      "CAMEL",
+      "NESTED",
+      "FORM",
+      "MULTIPART",
     ];
     for (const key of removedInStandard) {
       expect(stdText).not.toContain(secret(key));
@@ -452,14 +471,9 @@ describe("redactHar", () => {
 
     const unexaminedInStandard: ReadonlyArray<readonly [string, string]> = [
       ["H2PATH", "url-header"],
-      ["JSONPW", "body-json"],
-      ["CAMEL", "body-json"],
-      ["NESTED", "body-json"],
       ["RESBODY", "response-body-json"],
       ["RESBODY2", "response-body-json"],
       ["INITIATOR", "initiator"],
-      ["FORM", "body-form"],
-      ["MULTIPART", "body-multipart"],
     ];
     for (const [key, place] of unexaminedInStandard) {
       expect(stdText).toContain(secret(key));
@@ -470,7 +484,7 @@ describe("redactHar", () => {
       expect(stdReport.notInspected).toContain(place);
     }
 
-    expect(stdReport.entriesAffected).toBe(1);
+    expect(stdReport.entriesAffected).toBe(3);
     expect(stdReport.records.some((record) => record.field === "log.pages[].title")).toBe(true);
     expect("_hark" in stdDoc.log).toBe(false);
     expect(stdDoc.log._harExport?.redaction).toEqual(stdReport);

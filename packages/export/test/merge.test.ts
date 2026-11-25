@@ -316,6 +316,40 @@ describe("mergeEntry and FIELD_RULES", () => {
     expect(written._harExport?.["headersMissing"]).toBe("devtools-discarded");
     expect(written._harExport?.["timingsMissing"]).toBe("devtools-discarded");
     expect(written.comment).toContain("no longer in DevTools");
+
+    const neverStoredRec = {
+      ...fullRec,
+      headersNeverStored: true as const,
+    };
+    const mergedNeverStored = mergeEntry(
+      { kind: "recording-only", recording: recItem },
+      neverStoredRec,
+      null,
+    );
+    expect(mergedNeverStored.headersMissing).toBe("never-stored");
+    const writtenNeverStored = buildEntry(
+      mergedNeverStored,
+      "page_0" as never,
+      {
+        outcome: { kind: "empty" },
+        text: null,
+        encoding: null,
+        size: 0,
+        wireBytes: null,
+        check: null,
+      },
+      {
+        outcome: { kind: "empty" },
+        text: null,
+        encoding: null,
+        size: 0,
+        wireBytes: null,
+        check: null,
+      },
+      [],
+    );
+    expect(writtenNeverStored._harExport?.["headersMissing"]).toBe("never-stored");
+    expect(writtenNeverStored.comment).toContain("secret header values never stored");
   });
 });
 

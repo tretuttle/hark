@@ -1,4 +1,10 @@
 import { OWNED_FIELDS, safeDecodeQueryComponent } from "./internal.ts";
+import {
+  redactFormBodyText,
+  redactJsonBodyText,
+  redactMultipartBodyText,
+  type BodyRedactionOutcome,
+} from "./redact-body.ts";
 import { DEFAULT_REDACTION_RULES, type HarRedactionRule } from "./rules.ts";
 import { parseUrl, type UrlParts, type UrlSpan } from "./url-standard.ts";
 import {
@@ -246,21 +252,24 @@ export const HAR_PLACE_TABLE: {
   },
   "body-json": {
     place: "body-json",
-    standard: "kept-not-examined",
+    standard: "removed",
     shareable: "removed",
-    label: "JSON request bodies",
+    label: "values of JSON request body fields",
+    selectedBy: { target: "body", byName: true },
   },
   "body-form": {
     place: "body-form",
-    standard: "kept-not-examined",
+    standard: "removed",
     shareable: "removed",
-    label: "form-encoded request bodies",
+    label: "values of form-encoded request body fields",
+    selectedBy: { target: "body", byName: true },
   },
   "body-multipart": {
     place: "body-multipart",
-    standard: "kept-not-examined",
+    standard: "removed",
     shareable: "removed",
-    label: "multipart request bodies",
+    label: "values of multipart request body fields",
+    selectedBy: { target: "body", byName: true },
   },
   "request-body-other": {
     place: "request-body-other",
@@ -991,9 +1000,14 @@ function buildPlacesReport(
   rules: readonly HarRedactionRule[],
   counts: ReadonlyMap<HarRedactionPlace, number>,
   table: Readonly<Record<HarRedactionPlace, HarPlaceRule>>,
+  unexaminedPlaces?: ReadonlySet<HarRedactionPlace>,
 ): readonly HarPlaceCoverage[] {
   return HAR_REDACTION_PLACES.map((place) => {
-    const status = effectivePlaceStatus(place, level, rules, table);
+    const configured = effectivePlaceStatus(place, level, rules, table);
+    const status: PlaceExamStatus =
+      configured === "removed" && level === "standard" && unexaminedPlaces?.has(place)
+        ? "kept-not-examined"
+        : configured;
     const label = placeLabel(place, rules, table);
     return {
       place,
@@ -1007,6 +1021,53 @@ function buildPlacesReport(
   });
 }
 
+function buildRedactionReport(
+  level: RedactionLevel,
+  records: readonly HarRedactionRecord[],
+  entriesAffected: number,
+  places: readonly HarPlaceCoverage[],
+): HarLogRedactionExtension {
+  const notExamined = places.filter((place) => place.status === "kept-not-examined");
+  return {
+    applied: true,
+    level,
+    ...describeLevel(places),
+    totalRemoved: records.reduce((sum, record) => sum + record.count, 0),
+    entriesAffected,
+    rules: [...new Set(records.map((record) => record.ruleId))],
+    records,
+    places,
+    notExamined,
+    notInspected: notExamined.map((place) => place.place),
+  };
+}
+
+export function finalizeRedactionReport(
+  baseReport: HarLogRedactionExtension,
+  extraCounts: ReadonlyMap<HarRedactionPlace, number>,
+  unexaminedPlaces: ReadonlySet<HarRedactionPlace>,
+  records: readonly HarRedactionRecord[],
+  entriesAffected: number,
+): HarLogRedactionExtension {
+  const places = baseReport.places.map((place) => {
+    const count = place.count + (extraCounts.get(place.place) ?? 0);
+    const status: PlaceExamStatus =
+      place.status === "removed" &&
+      baseReport.level === "standard" &&
+      unexaminedPlaces.has(place.place)
+        ? "kept-not-examined"
+        : place.status;
+    return {
+      ...place,
+      status,
+      count,
+      detail: STATUS_WORDING[status].detail,
+      canStillHold: STATUS_WORDING[status].canStillHold(place.label),
+    };
+  });
+  return buildRedactionReport(baseReport.level, records, entriesAffected, places);
+}
+
 class RedactionTracker {
   readonly #entryIndex: number;
   readonly #removals = new Map<
@@ -1015,6 +1076,7 @@ class RedactionTracker {
   >();
   readonly #fields = new Set<HarModelField>();
   readonly placeCounts = new Map<HarRedactionPlace, number>();
+  readonly unexaminedPlaces = new Set<HarRedactionPlace>();
 
   constructor(entryIndex: number) {
     this.#entryIndex = entryIndex;
@@ -1022,6 +1084,11 @@ class RedactionTracker {
 
   kept<F extends HarModelField>(field: F, place: PlaceOf<F>, amount = 1): void {
     this.keptField(field, place, amount);
+  }
+
+  unexamined<F extends HarModelField>(field: F, place: PlaceOf<F>, amount = 1): void {
+    this.keptField(field, place, amount);
+    this.unexaminedPlaces.add(place);
   }
 
   removed<F extends HarModelField>(field: F, place: PlaceOf<F>, ruleId: string, amount = 1): void {
@@ -1819,6 +1886,25 @@ function redactParams(
   return result;
 }
 
+function redactPostDataBodyText(
+  postData: HarPostData,
+  text: string,
+  bodyPlace: "body-json" | "body-form" | "body-multipart",
+  ctx: RedactContext,
+): BodyRedactionOutcome {
+  const rawEncoding = (postData as Record<string, unknown>)["encoding"];
+  const encoding = typeof rawEncoding === "string" ? rawEncoding : undefined;
+  const findRule = (name: string) => findBodyRule(ctx.rules, name);
+  const replacement = ctx.emptied();
+  if (bodyPlace === "body-json") {
+    return redactJsonBodyText(text, encoding, findRule, replacement);
+  }
+  if (bodyPlace === "body-form") {
+    return redactFormBodyText(text, encoding, findRule, replacement);
+  }
+  return redactMultipartBodyText(text, postData.mimeType, encoding, findRule, replacement);
+}
+
 function redactPostData(
   postData: HarPostData | undefined,
   ctx: RedactContext,
@@ -1826,11 +1912,12 @@ function redactPostData(
   if (!postData) {
     return undefined;
   }
+  const redactedParams = redactParams(postData.params, ctx);
   const changes: Record<string, unknown> = {
     ...redactCustomFields(postData, OWNED_FIELDS.postData, "request.postData.<custom>", ctx),
     comment: redactComment(postData.comment, "request.postData.comment", ctx),
     mimeType: redactProtocolString(postData.mimeType, "request.postData.mimeType", ctx),
-    params: redactParams(postData.params, ctx),
+    params: redactedParams,
   };
 
   const text = postData.text;
@@ -1839,7 +1926,28 @@ function redactPostData(
       typeof text === "string" && text.length > 0
         ? classifyRequestBodyPlace(postData.mimeType, text)
         : "request-body-other";
-    if (ctx.isRemoved(bodyPlace)) {
+    if (
+      ctx.level === "standard" &&
+      typeof text === "string" &&
+      text.length > 0 &&
+      ctx.isRemoved(bodyPlace) &&
+      (bodyPlace === "body-json" || bodyPlace === "body-form" || bodyPlace === "body-multipart")
+    ) {
+      const outcome = redactPostDataBodyText(postData, text, bodyPlace, ctx);
+      if (outcome.kind === "redacted") {
+        for (const rule of outcome.rules) {
+          ctx.tracker.removed("request.postData.text", bodyPlace, rule.id);
+        }
+        changes.text = outcome.text;
+        if (bodyPlace === "body-form" && redactedParams.length === 0 && outcome.params) {
+          changes.params = outcome.params;
+        }
+      } else if (outcome.kind === "unparseable") {
+        ctx.tracker.unexamined("request.postData.text", bodyPlace);
+      } else {
+        ctx.tracker.kept("request.postData.text", bodyPlace);
+      }
+    } else if (ctx.isRemoved(bodyPlace)) {
       ctx.tracker.removed("request.postData.text", bodyPlace, ctx.levelRule(bodyPlace));
       changes.text = "";
     } else {
@@ -2175,7 +2283,13 @@ export function redactHarEntry(
   const { level, rules, replacement, table } = normalizeOptions(optionsOrRules);
   const ctx = createContext(entryIndex, level, rules, replacement, table);
   const result = redactEntryWithContext(entry, ctx);
-  const places = buildPlacesReport(level, rules, ctx.tracker.placeCounts, table);
+  const places = buildPlacesReport(
+    level,
+    rules,
+    ctx.tracker.placeCounts,
+    table,
+    ctx.tracker.unexaminedPlaces,
+  );
   return {
     entry: result.entry,
     url: result.entry.request.url,
@@ -2192,11 +2306,15 @@ export function redactHar(document: HarDocument, options?: RedactHarOptions): Re
   const { level, rules, replacement, table } = normalizeOptions(options);
   const allRecords: HarRedactionRecord[] = [];
   const totalCounts = new Map<HarRedactionPlace, number>();
+  const unexaminedPlaces = new Set<HarRedactionPlace>();
   let entriesAffected = 0;
 
   const merge = (ctx: RedactContext): void => {
     for (const [place, count] of ctx.tracker.placeCounts) {
       totalCounts.set(place, (totalCounts.get(place) ?? 0) + count);
+    }
+    for (const place of ctx.tracker.unexaminedPlaces) {
+      unexaminedPlaces.add(place);
     }
     allRecords.push(...ctx.tracker.records());
   };
@@ -2256,20 +2374,8 @@ export function redactHar(document: HarDocument, options?: RedactHarOptions): Re
   };
   merge(logCtx);
 
-  const places = buildPlacesReport(level, rules, totalCounts, table);
-  const notExamined = places.filter((place) => place.status === "kept-not-examined");
-  const report: HarLogRedactionExtension = {
-    applied: true,
-    level,
-    ...describeLevel(places),
-    totalRemoved: allRecords.reduce((sum, record) => sum + record.count, 0),
-    entriesAffected,
-    rules: [...new Set(allRecords.map((record) => record.ruleId))],
-    records: allRecords,
-    places,
-    notExamined,
-    notInspected: notExamined.map((place) => place.place),
-  };
+  const places = buildPlacesReport(level, rules, totalCounts, table, unexaminedPlaces);
+  const report = buildRedactionReport(level, allRecords, entriesAffected, places);
   logChanges._harExport = rebuild(log._harExport ?? {}, { ...exportCustom, redaction: report });
 
   return { document: { log: rebuild(log, logChanges) }, report };

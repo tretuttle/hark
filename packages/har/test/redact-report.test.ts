@@ -846,11 +846,13 @@ describe("standard leaves what it keeps as it was", () => {
     request.headers[0].value = "[REDACTED]";
     request.queryString[0].value = "[REDACTED]";
     request.postData.params[0].value = "[REDACTED]";
+    request.postData.text = "password=%5BREDACTED%5D";
     const redactedFields = document.log.entries[0]!._harExport?.redactedFields ?? [];
     expect([...redactedFields].sort()).toEqual([
       "request.cookies[].value",
       "request.headers[].value",
       "request.postData.params[].value",
+      "request.postData.text",
       "request.queryString[].value",
       "request.url",
     ]);

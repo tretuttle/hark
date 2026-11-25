@@ -6,6 +6,7 @@ import {
   firstStep,
   gaps,
   reducePopup,
+  unexaminedRequestBodies,
   unexpectedGaps,
   type Draft,
   type PopupEvent,
@@ -336,5 +337,45 @@ describe("bodies that are not in the file", () => {
     };
     expect(gaps(chosen)[0]).toMatchObject({ count: 40, chosen: true });
     expect(unexpectedGaps(gaps(chosen))).toBe(0);
+  });
+
+  it("reports unexamined request-body-other count only under standard redaction", () => {
+    const base = report();
+    const withRedaction = (
+      status: "kept-not-examined" | "removed",
+      count: number,
+    ): ExportReport => ({
+      ...base,
+      redaction: {
+        choice: "standard",
+        report: {
+          applied: true,
+          level: "standard",
+          guarantee: "",
+          remainingRisk: "",
+          totalRemoved: 0,
+          entriesAffected: 0,
+          rules: [],
+          records: [],
+          places: [
+            {
+              place: "request-body-other",
+              label: "every other request body",
+              fields: ["request.postData.text"],
+              status,
+              count,
+              detail: status === "removed" ? "removed" : "not examined: may contain secrets",
+              canStillHold: "",
+            },
+          ],
+          notExamined: [],
+          notInspected: [],
+        },
+      },
+    });
+    expect(unexaminedRequestBodies(base)).toBe(0);
+    expect(unexaminedRequestBodies(withRedaction("kept-not-examined", 0))).toBe(0);
+    expect(unexaminedRequestBodies(withRedaction("kept-not-examined", 3))).toBe(3);
+    expect(unexaminedRequestBodies(withRedaction("removed", 3))).toBe(0);
   });
 });

@@ -123,13 +123,19 @@ export function buildEntry(
     ...(request.outcome.kind === "cut-short" ? { uploadIncomplete: true } : {}),
     ...(requestLossy > 0 ? { uploadLossyText: requestLossy } : {}),
     ...(merged.headersMissing !== undefined ? { headersMissing: merged.headersMissing } : {}),
+    ...(merged.headersNeverStored ? { headersNeverStored: true } : {}),
     ...(merged.timingsMissing !== undefined ? { timingsMissing: merged.timingsMissing } : {}),
     ...(loadFailed.length > 0 ? { loadFailed: [...loadFailed] } : {}),
   };
   const missingNotes = [
     ...(merged.headersMissing !== undefined
-      ? [`Headers unavailable: ${MISSING_REASONS[merged.headersMissing].reportLabel}.`]
+      ? [
+          merged.headersMissing === "never-stored"
+            ? "Headers unavailable: secret header values never stored (settings)."
+            : `Headers unavailable: ${MISSING_REASONS[merged.headersMissing].reportLabel}.`,
+        ]
       : []),
+    ...(merged.headersNeverStored ? ["Secret header values never stored (settings)."] : []),
     ...(merged.timingsMissing !== undefined
       ? [`Timings unavailable: ${MISSING_REASONS[merged.timingsMissing].reportLabel}.`]
       : []),

@@ -562,15 +562,14 @@ describe("redaction coverage", () => {
       "WS_URL",
       "SAFARI_COOKIE",
       "REFRESH_COOKIE_HDR",
+      "TEXTPLAIN_JSON",
     ];
     const notExaminedInStd: ReadonlyArray<readonly [string, HarRedactionPlace]> = [
       ["RB_SIGNEDURL", "response-body-json"],
       ["WS_JWT", "websocket"],
-      ["GQL_BEARER", "body-json"],
       ["CUSTOM_APIKEY", "other-custom-field"],
       ["IMPLICIT_LOC", "url-header"],
       ["IMPLICIT_REDIR", "redirect-url"],
-      ["TEXTPLAIN_JSON", "body-json"],
       ["WS_PROTOCOL", "named-header"],
       ["B64_JSON", "response-body-base64"],
       ["HTML_CSRF", "response-body-other"],
@@ -603,6 +602,8 @@ describe("redaction coverage", () => {
     for (const key of removedInStd) {
       expect(shareOut).not.toContain(secret(key));
     }
+    expect(stdOut).toContain(secret("GQL_BEARER"));
+    expect(shareOut).not.toContain(secret("GQL_BEARER"));
     for (const [key] of notExaminedInStd) {
       if (key === "PATH_TOKEN") {
         expect(shareOut).toContain(secret(key));

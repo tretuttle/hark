@@ -47,7 +47,12 @@ const FROM_CACHE_BY_SOURCE: { readonly [S in ResponseSource]: "disk" | undefined
 };
 
 function mapHeaders(headers: readonly Header[]): HarNameValue[] {
+  // HAR 1.2 requires string header values; null (dropped by secretStorage: "never-store") maps to "" and is flagged via headersNeverStored.
   return headers.map(([name, value]) => ({ name, value: value ?? "" }));
+}
+
+function hasNeverStoredHeader(headers: readonly Header[] | undefined): boolean {
+  return headers?.some(([, value]) => value === null) ?? false;
 }
 
 function findHeader(headers: readonly Header[], targetName: string): string | null {
@@ -233,6 +238,8 @@ export function materialFromRecording(
         ? { _fromCache: FROM_CACHE_BY_SOURCE[response.source] }
         : {}),
     });
+    const headersNeverStored =
+      hasNeverStoredHeader(request.headers) || hasNeverStoredHeader(response?.headers);
     return {
       entry,
       body: { kind: "none", reason: "in-progress" },
@@ -242,6 +249,7 @@ export function materialFromRecording(
         ...(response === null ? { "response-head": "in-progress" as const } : {}),
         timings: "in-progress",
       },
+      ...(headersNeverStored ? { headersNeverStored: true } : {}),
     };
   }
 
@@ -319,11 +327,15 @@ export function materialFromRecording(
     ...(stop === null ? { timings: "network-aborted" as const } : {}),
   };
 
+  const headersNeverStored =
+    hasNeverStoredHeader(request.headers) || hasNeverStoredHeader(response?.headers);
+
   return {
     entry,
     body:
       settled.kind === "unanswered" ? { kind: "none", reason: "no-response" } : toCandidates(body),
     upload: uploadCandidates(settled.upload, upload),
     ...(Object.keys(lostGroups).length > 0 ? { lostGroups } : {}),
+    ...(headersNeverStored ? { headersNeverStored: true } : {}),
   };
 }

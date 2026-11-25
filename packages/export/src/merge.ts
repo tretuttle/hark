@@ -338,7 +338,8 @@ export interface MergedEntry {
   readonly inProgress: boolean;
   /** The source the response head came from, which is not FIELD_GROUPS' first when that source failed to load. */
   readonly responseHeadFrom: SourceName;
-  readonly headersMissing?: MissingReason | undefined;
+  readonly headersMissing?: MissingReason | "never-stored" | undefined;
+  readonly headersNeverStored?: boolean | undefined;
   readonly timingsMissing?: MissingReason | undefined;
 }
 
@@ -585,13 +586,16 @@ export function mergeEntry(
         ? pair.recording.inProgress
         : pair.devtools.inProgress;
 
-  const headersMissing =
+  const headersNeverStored = Boolean(reqMat.headersNeverStored || resMat.headersNeverStored);
+  const groupHeadersMissing =
     (!hasUsableGroup("request-head", reqMat)
       ? groupMissingReason("request-head", reqMat)
       : undefined) ??
     (!hasUsableGroup("response-head", resMat)
       ? groupMissingReason("response-head", resMat)
       : undefined);
+  const headersMissing =
+    groupHeadersMissing ?? (headersNeverStored ? ("never-stored" as const) : undefined);
   const timingsMissing = !hasUsableGroup("timings", timingsMat)
     ? groupMissingReason("timings", timingsMat)
     : undefined;
@@ -605,6 +609,9 @@ export function mergeEntry(
     inProgress,
     responseHeadFrom: pickGroupSource("response-head", recording, devtools),
     ...(headersMissing !== undefined ? { headersMissing } : {}),
+    ...(headersNeverStored && headersMissing !== "never-stored"
+      ? { headersNeverStored: true }
+      : {}),
     ...(timingsMissing !== undefined ? { timingsMissing } : {}),
   };
 }

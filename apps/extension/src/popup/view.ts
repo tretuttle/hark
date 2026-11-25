@@ -442,3 +442,12 @@ export function gaps(report: ExportReport): readonly Gap[] {
 /** Response bodies the user did not choose to leave out and that are not whole in the file. */
 export const unexpectedGaps = (list: readonly Gap[]): number =>
   list.filter((g) => !g.chosen && g.place === "response").reduce((sum, g) => sum + g.count, 0);
+
+/** Non-form, non-JSON, non-multipart request bodies kept unexamined under standard redaction. */
+export function unexaminedRequestBodies(report: ExportReport): number {
+  if (report.redaction.choice !== "standard" || report.redaction.report === null) return 0;
+  const other = report.redaction.report.places.find(
+    (place) => place.place === "request-body-other" && place.status === "kept-not-examined",
+  );
+  return other?.count ?? 0;
+}

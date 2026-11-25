@@ -201,4 +201,52 @@ describe("materialFromRecording validates against HAR 1.2 schema", () => {
     const doc2 = asHarDoc(matCopying.entry);
     await expect(HarValidator.har(doc2)).resolves.toBe(doc2);
   });
+
+  it("flags headersNeverStored when secret header values are null, and leaves wire-empty headers unflagged", () => {
+    const dropped = materialFromRecording({
+      kind: "settled",
+      settled: {
+        kind: "answered",
+        request: {
+          ...requestFacts,
+          headers: [
+            ["host", "app.example"],
+            ["authorization", null],
+            ["x-empty", ""],
+          ],
+        },
+        response: {
+          ...responseFacts,
+          headers: [
+            ["content-type", "text/plain"],
+            ["set-cookie", null],
+          ],
+        },
+        stop: stopFacts,
+        route: "no-body",
+        body: { kind: "empty" },
+        upload: { kind: "none" },
+      },
+      body: { kind: "empty" },
+      upload: { kind: "empty" },
+    });
+    expect(dropped.headersNeverStored).toBe(true);
+    expect(dropped.entry.request.headers.find((h) => h.name === "authorization")?.value).toBe("");
+
+    const wireEmpty = materialFromRecording({
+      kind: "settled",
+      settled: {
+        kind: "answered",
+        request: { ...requestFacts, headers: [["x-empty", ""]] },
+        response: { ...responseFacts, headers: [["x-empty-res", ""]] },
+        stop: stopFacts,
+        route: "no-body",
+        body: { kind: "empty" },
+        upload: { kind: "none" },
+      },
+      body: { kind: "empty" },
+      upload: { kind: "empty" },
+    });
+    expect(wireEmpty.headersNeverStored).toBeUndefined();
+  });
 });
